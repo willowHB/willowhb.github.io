@@ -711,6 +711,23 @@
             }
         }
         
+        /* 确保按钮可点击 */
+        .buttons button {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            cursor: pointer;
+        }
+        
+        /* 移动设备调试样式 */
+        @media screen and (max-width: 768px) {
+            .buttons button {
+                position: relative;
+                z-index: 1000;
+            }
+        }
+        
         /* 防止移动设备缩放 */
         @viewport {
             width: device-width;
@@ -1007,6 +1024,11 @@
 
     function startTimer() {
         if (timerInterval) return; // Already running
+        
+        // 移动设备调试
+        if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+            alert('开始按钮已点击！倒计时启动...');
+        }
 
         // Get durations from input fields
         workDuration = parseInt(workDurationInput.value) * 60;
@@ -1066,30 +1088,40 @@
         updateDisplay();
     }
 
-    // 支持触摸事件和鼠标点击
+    // 支持触摸事件和鼠标点击 - 移动设备优化
     function handleStart(e) {
         e.preventDefault();
+        console.log('开始按钮被点击');
         startTimer();
     }
     
     function handleStop(e) {
         e.preventDefault();
+        console.log('停止按钮被点击');
         stopTimer();
     }
     
-    // 同时支持触摸和鼠标事件
-    startBtn.addEventListener('click', handleStart);
-    startBtn.addEventListener('touchstart', handleStart);
+    // 使用指针事件统一处理触摸和鼠标
+    function addPointerEvents() {
+        // 现代浏览器的指针事件
+        startBtn.addEventListener('pointerdown', handleStart);
+        stopBtn.addEventListener('pointerdown', handleStop);
+        
+        // 传统触摸事件作为后备
+        startBtn.addEventListener('touchend', handleStart);
+        stopBtn.addEventListener('touchend', handleStop);
+        
+        // 鼠标事件作为后备
+        startBtn.addEventListener('click', handleStart);
+        stopBtn.addEventListener('click', handleStop);
+        
+        // 防止双击缩放
+        startBtn.style.touchAction = 'manipulation';
+        stopBtn.style.touchAction = 'manipulation';
+    }
     
-    stopBtn.addEventListener('click', handleStop);
-    stopBtn.addEventListener('touchstart', handleStop);
-    
-    // 防止触摸时的缩放行为
-    document.addEventListener('touchstart', function(e) {
-        if (e.target === startBtn || e.target === stopBtn) {
-            e.preventDefault();
-        }
-    }, { passive: false });
+    // 延迟绑定事件，确保DOM完全加载
+    setTimeout(addPointerEvents, 100);
 
     // 页面可见性检测
     let wasHidden = false;
