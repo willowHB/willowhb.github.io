@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>健康办公助手 - 久坐提醒工具</title>
     <link rel="shortcut icon" href="img/sit.png" type="image/png">
     <link rel="icon" href="img/sit.png" type="image/png">
@@ -659,6 +662,61 @@
                 font-size: 1em;
                 margin-bottom: 12px;
             }
+            
+            /* 移动设备优化 */
+            .buttons button {
+                font-size: 1.2em;
+                padding: 15px 30px;
+                margin: 0 15px;
+                min-height: 50px;
+                min-width: 120px;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+            
+            .time-input-wrapper {
+                padding: 12px 15px;
+            }
+            
+            .time-settings input[type="number"] {
+                width: 60px;
+                font-size: 1.2em;
+                padding: 8px;
+            }
+            
+            .theme-btn {
+                width: 40px;
+                height: 40px;
+            }
+        }
+        
+        /* 移动设备触摸优化 */
+        @media (hover: none) and (pointer: coarse) {
+            .buttons button:hover {
+                opacity: 1;
+                transform: none;
+            }
+            
+            .buttons button:active {
+                transform: scale(0.95);
+                opacity: 0.8;
+            }
+            
+            .theme-btn:hover {
+                transform: none;
+            }
+            
+            .theme-btn:active {
+                transform: scale(0.9);
+            }
+        }
+        
+        /* 防止移动设备缩放 */
+        @viewport {
+            width: device-width;
+            initial-scale: 1;
+            maximum-scale: 1;
+            user-scalable: no;
         }
         
         @media (max-height: 700px) {
@@ -1008,8 +1066,30 @@
         updateDisplay();
     }
 
-    startBtn.addEventListener('click', startTimer);
-    stopBtn.addEventListener('click', stopTimer);
+    // 支持触摸事件和鼠标点击
+    function handleStart(e) {
+        e.preventDefault();
+        startTimer();
+    }
+    
+    function handleStop(e) {
+        e.preventDefault();
+        stopTimer();
+    }
+    
+    // 同时支持触摸和鼠标事件
+    startBtn.addEventListener('click', handleStart);
+    startBtn.addEventListener('touchstart', handleStart);
+    
+    stopBtn.addEventListener('click', handleStop);
+    stopBtn.addEventListener('touchstart', handleStop);
+    
+    // 防止触摸时的缩放行为
+    document.addEventListener('touchstart', function(e) {
+        if (e.target === startBtn || e.target === stopBtn) {
+            e.preventDefault();
+        }
+    }, { passive: false });
 
     // 页面可见性检测
     let wasHidden = false;
