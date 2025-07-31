@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康办公助手 - 久坐提醒工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        body.theme-ocean {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+        }
+        
+        body.theme-sunset {
+            background: linear-gradient(-45deg, #ff9a9e, #fecfef, #fecfef, #ff9a9e);
+        }
+        
+        body.theme-forest {
+            background: linear-gradient(-45deg, #56ab2f, #a8edea, #fed6e3, #d299c2);
+        }
+        
+        body.theme-night {
+            background: linear-gradient(-45deg, #2c3e50, #3498db, #9b59b6, #e74c3c);
+        }
+        
+        body.theme-eyecare {
+            background: linear-gradient(-45deg, #c7d2cc, #a8c8a8, #b8d4b8, #d4e6d4);
+        }
+        
+        body.theme-dark {
+            background: linear-gradient(-45deg, #1a1a1a, #2d2d2d, #3a3a3a, #1e1e1e);
+            color: #e0e0e0;
+        }
+        
+        body.theme-dark .container {
+            background: rgba(40, 40, 40, 0.95);
+            color: #e0e0e0;
+        }
+        
+        body.theme-dark .main-timer-section {
+            background: rgba(50, 50, 50, 0.9);
+            border-color: rgba(80, 80, 80, 0.8);
+        }
+        
+        body.theme-dark .main-title,
+        body.theme-dark .subtitle,
+        body.theme-dark #status {
+            color: #e0e0e0;
+        }
+        
+        body.theme-dark .health-info,
+        body.theme-dark .tips-section,
+        body.theme-dark .health-habits-section,
+        body.theme-dark .stats-section {
+            background: rgba(50, 50, 50, 0.3);
+        }
+        
+        body.theme-dark .health-item,
+        body.theme-dark .tip-item,
+        body.theme-dark .habit-item,
+        body.theme-dark .stat-item {
+            background: rgba(60, 60, 60, 0.4);
+            color: #d0d0d0;
+        }
+        
+        body.theme-dark .habit-title,
+        body.theme-dark .stat-title {
+            color: #e0e0e0;
+        }
+        
+        body.theme-dark .time-settings,
+        body.theme-dark .settings {
+            background: rgba(50, 50, 50, 0.3);
+        }
+        
+        body.theme-dark .time-input-wrapper {
+            background: rgba(60, 60, 60, 0.9);
+            border-color: #555;
+        }
+        
+        body.theme-dark .time-settings input[type="number"] {
+            color: #e0e0e0;
+        }
+        
+        body.theme-dark .settings label {
+            color: #d0d0d0;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        
+        .main-timer-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            display: block;
+            visibility: visible;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .info-sections {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        @media (min-width: 768px) {
+            .info-sections {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .info-sections {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        .main-title {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        
+        h1 {
+            margin-top: 0;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            font-weight: 400;
+        }
+        
+        .health-info {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            border-left: 4px solid #ff6b6b;
+            height: fit-content;
+        }
+        
+        .health-info h4 {
+            margin: 0 0 12px 0;
+            color: #d63031;
+            font-size: 1.1em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .health-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .health-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #444;
+            line-height: 1.5;
+            text-align: left;
+            border-left: 3px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .tips-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            border-left: 4px solid #00b894;
+        }
+        
+        .tips-section h4 {
+            margin: 0 0 12px 0;
+            color: #00b894;
+            font-size: 1.1em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .tip-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #444;
+        }
+        
+        .health-habits-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            border-left: 4px solid #00cec9;
+        }
+        
+        .health-habits-section h4 {
+            margin: 0 0 20px 0;
+            color: #00cec9;
+            font-size: 1.1em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .habits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+        }
+        
+        .habit-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+        
+        .habit-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .habit-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+        
+        .habit-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .habit-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #00cec9;
+            margin-bottom: 5px;
+        }
+        
+        .habit-desc {
+            font-size: 0.8em;
+            color: #666;
+            line-height: 1.3;
+        }
+        
+        .stats-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            border-left: 4px solid #6c5ce7;
+        }
+        
+        .stats-section h4 {
+            margin: 0 0 20px 0;
+            color: #6c5ce7;
+            font-size: 1.1em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stats-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 15px;
+            justify-content: space-between;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.2s ease;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+        
+        .stat-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-number {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #6c5ce7;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #666;
+            line-height: 1.3;
+        }
+        p {
+            font-size: 1.2em;
+            color: #666;
+        }
+        #timer {
+            font-size: 4.5em;
+            font-weight: bold;
+            color: #007aff;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #status {
+            font-size: 1.4em;
+            margin: 10px 0;
+            color: #333;
+            font-weight: 500;
+        }
+        .buttons button {
+            font-size: 1em;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        #startBtn {
+            background-color: #34c759;
+            color: white;
+        }
+        #stopBtn {
+            background-color: #ff3b30;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .settings {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .settings label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 0.95em;
+            color: #555;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .settings input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #007aff;
+        }
+        .time-settings {
+            margin: 30px 0;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .time-settings h3 {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .time-input-group {
+            display: flex;
+            justify-content: space-around;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .time-input-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+        
+        .time-input-item label {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .time-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .time-input-wrapper:focus-within {
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+        
+        .time-settings input[type="number"] {
+            width: 50px;
+            padding: 4px;
+            border: none;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 600;
+            background: transparent;
+            color: #333;
+        }
+        
+        .time-settings input[type="number"]:focus {
+            outline: none;
+        }
+        
+        .time-unit {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .theme-selector {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .theme-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .theme-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .theme-btn.active {
+            border-color: #007aff;
+            border-width: 3px;
+        }
+        
+        .theme-default { background: linear-gradient(45deg, #ee7752, #e73c7e); }
+        .theme-ocean-btn { background: linear-gradient(45deg, #667eea, #764ba2); }
+        .theme-sunset-btn { background: linear-gradient(45deg, #ff9a9e, #fecfef); }
+        .theme-forest-btn { background: linear-gradient(45deg, #56ab2f, #a8edea); }
+        .theme-night-btn { background: linear-gradient(45deg, #2c3e50, #3498db); }
+        .theme-eyecare-btn { background: linear-gradient(45deg, #c7d2cc, #a8c8a8); }
+        .theme-dark-btn { background: linear-gradient(45deg, #1a1a1a, #2d2d2d); }
+        
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            #timer {
+                font-size: 3em;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .main-title {
+                font-size: 1.5em;
+            }
+            
+            .subtitle {
+                font-size: 0.9em;
+            }
+            
+            #timer {
+                font-size: 2.5em;
+            }
+            
+            #status {
+                font-size: 1em;
+            }
+            
+            .time-input-group {
+                gap: 15px;
+            }
+            
+            .tips-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .habits-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stats-grid {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            
+            .stats-section {
+                padding: 20px;
+                margin: 20px 0;
+            }
+            
+            .stat-item {
+                flex: 1 1 calc(50% - 6px);
+                min-width: 140px;
+                padding: 12px;
+            }
+            
+            .stat-icon {
+                font-size: 1.6em;
+                margin-bottom: 6px;
+            }
+            
+            .stat-title {
+                font-size: 0.8em;
+                margin-bottom: 4px;
+            }
+            
+            .stat-number {
+                font-size: 1em;
+                margin-bottom: 4px;
+            }
+            
+            .stat-label {
+                font-size: 0.7em;
+            }
+            
+            .stats-section h4 {
+                font-size: 1.1em;
+                margin-bottom: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-section {
+                padding: 15px;
+                margin: 15px 0;
+            }
+            
+            .stats-grid {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .stat-item {
+                flex: 1 1 calc(50% - 5px);
+                min-width: 120px;
+                padding: 10px;
+            }
+            
+            .stat-icon {
+                font-size: 1.4em;
+                margin-bottom: 5px;
+            }
+            
+            .stat-title {
+                font-size: 0.75em;
+                margin-bottom: 3px;
+            }
+            
+            .stat-number {
+                font-size: 0.9em;
+                margin-bottom: 3px;
+            }
+            
+            .stat-label {
+                font-size: 0.65em;
+            }
+            
+            .stats-section h4 {
+                font-size: 1em;
+                margin-bottom: 12px;
+            }
+        }
+        
+        @media (max-height: 700px) {
+            .info-sections {
+                overflow-y: auto;
+                max-height: 400px;
+            }
+            
+            .health-item {
+                padding: 8px 10px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="main-title">💼 健康办公助手</h1>
+    <p class="subtitle">科学工作，健康生活 - 专为白领打造的久坐提醒工具</p>
+    
+    <div class="main-timer-section">
+        <h1 id="status">准备开始工作？</h1>
+        <div id="timer">25:00</div>
+    <div class="time-settings">
+        <h3>⏰ 时间设置</h3>
+        <div class="time-input-group">
+            <div class="time-input-item">
+                <label>工作时间</label>
+                <div class="time-input-wrapper">
+                    <input type="number" id="workDurationInput" value="25" min="1" max="120">
+                    <span class="time-unit">分钟</span>
+                </div>
+            </div>
+            <div class="time-input-item">
+                <label>休息时间</label>
+                <div class="time-input-wrapper">
+                    <input type="number" id="breakDurationInput" value="5" min="1" max="60">
+                    <span class="time-unit">分钟</span>
+                </div>
+            </div>
+        </div>
+    </div>
+        <div class="buttons">
+            <button id="startBtn">开始</button>
+            <button id="stopBtn">停止</button>
+        </div>
+        
+        <div class="settings">
+            <label>
+                <input type="checkbox" id="autoStartCheckbox">
+                页面加载时自动开始计时
+            </label>
+        </div>
+    </div>
+    <div class="theme-selector">
+        <div class="theme-btn theme-default active" data-theme="default" title="默认主题"></div>
+        <div class="theme-btn theme-ocean-btn" data-theme="ocean" title="海洋主题"></div>
+        <div class="theme-btn theme-sunset-btn" data-theme="sunset" title="日落主题"></div>
+        <div class="theme-btn theme-forest-btn" data-theme="forest" title="森林主题"></div>
+        <div class="theme-btn theme-night-btn" data-theme="night" title="夜晚主题"></div>
+        <div class="theme-btn theme-eyecare-btn" data-theme="eyecare" title="护眼主题"></div>
+        <div class="theme-btn theme-dark-btn" data-theme="dark" title="暗黑主题"></div>
+    </div>
+    <div class="info-sections">
+        <div class="health-info">
+            <h4>🚨 久坐危害知多少</h4>
+            <div class="health-list">
+                <div class="health-item">🦴 <strong>脊椎问题：</strong>长期久坐导致腰椎间盘突出、颈椎病、脊柱侧弯</div>
+                <div class="health-item">❤️ <strong>心血管疾病：</strong>增加心脏病、高血压、血栓风险</div>
+                <div class="health-item">⚖️ <strong>代谢异常：</strong>血糖升高、肥胖、糖尿病风险增加</div>
+                <div class="health-item">💪 <strong>肌肉萎缩：</strong>臀部肌肉无力、下肢血液循环不良</div>
+                <div class="health-item">🧠 <strong>精神健康：</strong>焦虑、抑郁、注意力下降、记忆力减退</div>
+            </div>
+        </div>
+        
+        <div class="health-info">
+            <h4>💧 喝水少的危害</h4>
+            <div class="health-list">
+                <div class="health-item">🧠 <strong>大脑功能：</strong>脱水影响认知能力、注意力集中和记忆力</div>
+                <div class="health-item">🫀 <strong>血液循环：</strong>血液粘稠度增加，心脏负担加重</div>
+                <div class="health-item">🫘 <strong>肾脏健康：</strong>毒素堆积，增加肾结石和尿路感染风险</div>
+                <div class="health-item">🌡️ <strong>体温调节：</strong>散热能力下降，容易疲劳和中暑</div>
+                <div class="health-item">💊 <strong>免疫力：</strong>新陈代谢减缓，抵抗力下降</div>
+            </div>
+        </div>
+        
+        <div class="health-info">
+            <h4>⏰ 加班危害</h4>
+            <div class="health-list">
+                <div class="health-item">😴 <strong>睡眠质量：</strong>作息紊乱、失眠多梦、生物钟失调</div>
+                <div class="health-item">🧠 <strong>认知能力：</strong>长期疲劳导致记忆力下降、决策能力减弱</div>
+                <div class="health-item">❤️ <strong>心理压力：</strong>焦虑抑郁、工作倦怠综合征、情绪失控</div>
+                <div class="health-item">👨‍👩‍👧‍👦 <strong>家庭关系：</strong>缺乏陪伴时间，影响亲情和友情</div>
+                <div class="health-item">⚡ <strong>工作效率：</strong>过度疲劳反而降低工作质量和效率</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stats-section">
+        <h4>📊 久坐数据统计</h4>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-icon">⏰</div>
+                <div class="stat-title">平均久坐</div>
+                <div class="stat-number">8+ 小时</div>
+                <div class="stat-label">每天久坐时间</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">❤️</div>
+                <div class="stat-title">健康风险</div>
+                <div class="stat-number">+40%</div>
+                <div class="stat-label">心脏病风险增加</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">💼</div>
+                <div class="stat-title">工作间隔</div>
+                <div class="stat-number">25 分钟</div>
+                <div class="stat-label">最佳专注时长</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">☕</div>
+                <div class="stat-title">休息时长</div>
+                <div class="stat-number">5 分钟</div>
+                <div class="stat-label">建议休息时间</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="health-habits-section">
+        <h4>🌟 健康生活习惯指南</h4>
+        <div class="habits-grid">
+            <div class="habit-item">
+                <div class="habit-icon">⏰</div>
+                <div class="habit-title">久坐时间</div>
+                <div class="habit-value">≤ 30分钟</div>
+                <div class="habit-desc">连续久坐不超过30分钟</div>
+            </div>
+            <div class="habit-item">
+                <div class="habit-icon">💧</div>
+                <div class="habit-title">每日饮水</div>
+                <div class="habit-value">≥ 2000ml</div>
+                <div class="habit-desc">成人每日饮水量不少于2升</div>
+            </div>
+            <div class="habit-item">
+                <div class="habit-icon">🏃‍♂️</div>
+                <div class="habit-title">运动时长</div>
+                <div class="habit-value">≥ 30分钟</div>
+                <div class="habit-desc">每日中等强度运动30分钟</div>
+            </div>
+            <div class="habit-item">
+                <div class="habit-icon">😴</div>
+                <div class="habit-title">睡眠时间</div>
+                <div class="habit-value">7-9小时</div>
+                <div class="habit-desc">成人每晚睡眠7-9小时</div>
+            </div>
+            <div class="habit-item">
+                <div class="habit-icon">🍎</div>
+                <div class="habit-title">用餐规律</div>
+                <div class="habit-value">3餐定时</div>
+                <div class="habit-desc">三餐定时定量，营养均衡</div>
+            </div>
+            <div class="habit-item">
+                <div class="habit-icon">🧘‍♀️</div>
+                <div class="habit-title">放松时间</div>
+                <div class="habit-value">≥ 15分钟</div>
+                <div class="habit-desc">每日冥想或放松15分钟</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tips-section">
+        <h4>💡 休息时间建议</h4>
+        <div class="tips-grid">
+            <div class="tip-item">🚶‍♂️ 起身走动，活动筋骨</div>
+            <div class="tip-item">👀 远眺窗外，缓解眼疲劳</div>
+            <div class="tip-item">🤸‍♀️ 简单拉伸，放松肌肉</div>
+            <div class="tip-item">💧 补充水分，促进代谢</div>
+            <div class="tip-item">🧘‍♀️ 深呼吸，调节心情</div>
+            <div class="tip-item">🏃‍♂️ 爬楼梯，增强心肺</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let workDuration = 25 * 60;
+    let breakDuration = 5 * 60;
+
+    let timerInterval = null;
+    let isWorkTime = true;
+    let timeRemaining; // Will be set on start
+
+    const statusEl = document.getElementById('status');
+    const timerEl = document.getElementById('timer');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const autoStartCheckbox = document.getElementById('autoStartCheckbox');
+    const workDurationInput = document.getElementById('workDurationInput');
+    const breakDurationInput = document.getElementById('breakDurationInput');
+    const themeButtons = document.querySelectorAll('.theme-btn');
+    
+    // Theme switching functionality
+    function setTheme(theme) {
+        document.body.className = theme === 'default' ? '' : `theme-${theme}`;
+        themeButtons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`[data-theme="${theme}"]`).classList.add('active');
+        localStorage.setItem('selectedTheme', theme);
+    }
+    
+    themeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            setTheme(btn.dataset.theme);
+        });
+    });
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function updateDisplay() {
+        timerEl.textContent = formatTime(timeRemaining);
+        
+        if (isWorkTime) {
+            statusEl.textContent = timerInterval ? '专注工作中...' : '准备开始工作？';
+        } else {
+            statusEl.textContent = timerInterval ? '休息时间到！' : '准备休息？';
+        }
+    }
+
+    function showNotification(title, body) {
+        if (Notification.permission === 'granted') {
+            new Notification(title, { body });
+        } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    new Notification(title, { body });
+                }
+            });
+        }
+    }
+
+    function startTimer() {
+        if (timerInterval) return; // Already running
+
+        // Get durations from input fields
+        workDuration = parseInt(workDurationInput.value) * 60;
+        breakDuration = parseInt(breakDurationInput.value) * 60;
+        
+        if (isWorkTime) {
+            timeRemaining = workDuration;
+        } else {
+            timeRemaining = breakDuration;
+        }
+
+
+        // Request permission on start
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        timerInterval = setInterval(() => {
+            timeRemaining--;
+            updateDisplay();
+
+            if (timeRemaining < 0) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                if (isWorkTime) {
+                    isWorkTime = false;
+                    timeRemaining = breakDuration;
+                    statusEl.textContent = '休息时间到！';
+                    showNotification('休息时间到！', `该休息 ${parseInt(breakDurationInput.value)} 分钟了，起身活动一下吧！`);
+                } else {
+                    isWorkTime = true;
+                    timeRemaining = workDuration;
+                    statusEl.textContent = '工作时间开始！';
+                    showNotification('工作时间开始！', `休息结束，开始 ${parseInt(workDurationInput.value)} 分钟的专注工作吧！`);
+                }
+                startTimer(); // Automatically start the next phase
+            }
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        isWorkTime = true;
+        timeRemaining = parseInt(workDurationInput.value) * 60;
+        statusEl.textContent = '准备开始工作？';
+        updateDisplay();
+    }
+
+    startBtn.addEventListener('click', startTimer);
+    stopBtn.addEventListener('click', stopTimer);
+
+    // Initial setup on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Restore saved settings
+        const savedWorkDuration = localStorage.getItem('workDuration');
+        const savedBreakDuration = localStorage.getItem('breakDuration');
+        const savedTheme = localStorage.getItem('selectedTheme') || 'default';
+        
+        if (savedWorkDuration) workDurationInput.value = savedWorkDuration;
+        if (savedBreakDuration) breakDurationInput.value = savedBreakDuration;
+        setTheme(savedTheme);
+
+        timeRemaining = parseInt(workDurationInput.value) * 60;
+        updateDisplay();
+
+        // Restore and handle auto-start preference
+        const autoStartEnabled = localStorage.getItem('autoStartEnabled') === 'true';
+        autoStartCheckbox.checked = autoStartEnabled;
+
+        if (autoStartEnabled) {
+            startTimer();
+        }
+
+        // Save preferences when changed
+        autoStartCheckbox.addEventListener('change', () => {
+            localStorage.setItem('autoStartEnabled', autoStartCheckbox.checked);
+        });
+        workDurationInput.addEventListener('change', () => {
+            localStorage.setItem('workDuration', workDurationInput.value);
+            stopTimer(); // Reset timer if changed
+        });
+        breakDurationInput.addEventListener('change', () => {
+            localStorage.setItem('breakDuration', breakDurationInput.value);
+        });
+    });
+</script>
+
+</body>
+</html>
