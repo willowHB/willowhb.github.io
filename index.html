@@ -6,7 +6,6 @@
     <title>健康办公助手 - 久坐提醒工具</title>
     <link rel="shortcut icon" href="img/sit.png" type="image/png">
     <link rel="icon" href="img/sit.png" type="image/png">
-    <script defer src="https://cloud.umami.is/script.js" data-website-id="7527b1b0-316a-44cf-a2d8-1b912dede59c"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -892,15 +891,60 @@
     }
 
     function showNotification(title, body) {
+        // 创建音频对象用于声音提醒
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmFgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+        
+        // 播放声音提醒
+        try {
+            audio.play().catch(e => console.log('声音提醒失败:', e));
+        } catch (e) {
+            console.log('声音提醒不支持:', e);
+        }
+        
+        // 桌面通知
         if (Notification.permission === 'granted') {
-            new Notification(title, { body });
+            new Notification(title, { 
+                body: body,
+                icon: 'img/sit.png',
+                requireInteraction: true,
+                tag: 'break-reminder'
+            });
         } else if (Notification.permission !== 'denied') {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
-                    new Notification(title, { body });
+                    new Notification(title, { 
+                        body: body,
+                        icon: 'img/sit.png',
+                        requireInteraction: true,
+                        tag: 'break-reminder'
+                    });
                 }
             });
         }
+        
+        // 视觉提醒 - 页面标题闪烁
+        let originalTitle = document.title;
+        let blinkCount = 0;
+        let blinkInterval = setInterval(() => {
+            document.title = blinkCount % 2 === 0 ? '🔔 ' + title : originalTitle;
+            blinkCount++;
+            if (blinkCount > 6) {
+                clearInterval(blinkInterval);
+                document.title = originalTitle;
+            }
+        }, 1000);
+        
+        // 视觉提醒 - 页面闪烁效果
+        const originalBg = document.body.style.background;
+        let flashCount = 0;
+        let flashInterval = setInterval(() => {
+            document.body.style.background = flashCount % 2 === 0 ? 'linear-gradient(45deg, #ff6b6b, #ffd93d)' : originalBg;
+            flashCount++;
+            if (flashCount > 5) {
+                clearInterval(flashInterval);
+                document.body.style.background = originalBg;
+            }
+        }, 500);
     }
 
     function startTimer() {
@@ -927,21 +971,31 @@
             updateDisplay();
 
             if (timeRemaining < 0) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-                if (isWorkTime) {
-                    isWorkTime = false;
-                    timeRemaining = breakDuration;
-                    statusEl.textContent = '休息时间到！';
-                    showNotification('休息时间到！', `该休息 ${parseInt(breakDurationInput.value)} 分钟了，起身活动一下吧！`);
-                } else {
-                    isWorkTime = true;
-                    timeRemaining = workDuration;
-                    statusEl.textContent = '工作时间开始！';
-                    showNotification('工作时间开始！', `休息结束，开始 ${parseInt(workDurationInput.value)} 分钟的专注工作吧！`);
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    if (isWorkTime) {
+                        isWorkTime = false;
+                        timeRemaining = breakDuration;
+                        statusEl.textContent = '休息时间到！';
+                        forceNotification('🔔 休息时间到！', `该休息 ${parseInt(breakDurationInput.value)} 分钟了，起身活动一下吧！
+
+💡 建议：
+• 起身走动，活动筋骨
+• 远眺窗外，缓解眼疲劳  
+• 补充水分，促进代谢`);
+                    } else {
+                        isWorkTime = true;
+                        timeRemaining = workDuration;
+                        statusEl.textContent = '工作时间开始！';
+                        forceNotification('⏰ 工作时间开始！', `休息结束，开始 ${parseInt(workDurationInput.value)} 分钟的专注工作吧！
+
+💡 建议：
+• 保持正确坐姿
+• 专注当前任务
+• 避免分心`);
+                    }
+                    startTimer(); // Automatically start the next phase
                 }
-                startTimer(); // Automatically start the next phase
-            }
         }, 1000);
     }
 
@@ -957,8 +1011,40 @@
     startBtn.addEventListener('click', startTimer);
     stopBtn.addEventListener('click', stopTimer);
 
+    // 页面可见性检测
+    let wasHidden = false;
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            wasHidden = true;
+        } else if (wasHidden) {
+            // 页面重新可见时刷新通知权限
+            if (Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+            wasHidden = false;
+        }
+    });
+
+    // 强制提醒机制 - 即使标签页不可见
+    function forceNotification(title, body) {
+        // 创建弹窗提醒
+        if (window.alert) {
+            setTimeout(() => {
+                alert(title + '\n\n' + body);
+            }, 100);
+        }
+        
+        // 尝试使用系统通知
+        showNotification(title, body);
+    }
+
     // Initial setup on page load
     document.addEventListener('DOMContentLoaded', () => {
+        // 请求通知权限
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+        
         // Restore saved settings
         const savedWorkDuration = localStorage.getItem('workDuration');
         const savedBreakDuration = localStorage.getItem('breakDuration');
