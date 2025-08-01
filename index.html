@@ -1082,6 +1082,7 @@
             }
         };
         timerWorker.postMessage({command: 'start', duration: timeRemaining});
+        updateDisplay(); // 立即更新显示以显示初始时间和运行状态
     }
 
     function stopTimer() {
