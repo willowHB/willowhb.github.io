@@ -922,7 +922,7 @@
     let workDuration = 25 * 60;
     let breakDuration = 5 * 60;
 
-    let timerInterval = null;
+    let timerWorker = null;
     let isWorkTime = true;
     let timeRemaining; // Will be set on start
 
@@ -958,10 +958,12 @@
     function updateDisplay() {
         timerEl.textContent = formatTime(timeRemaining);
         
+        const isRunning = !!timerWorker;
+        
         if (isWorkTime) {
-            statusEl.textContent = timerInterval ? '专注工作中...' : '准备开始工作？';
+            statusEl.textContent = isRunning ? '专注工作中...' : '准备开始工作？';
         } else {
-            statusEl.textContent = timerInterval ? '休息时间到！' : '准备休息？';
+            statusEl.textContent = isRunning ? '休息时间到！' : '准备休息？';
         }
     }
 
@@ -1023,7 +1025,7 @@
     }
 
     function startTimer() {
-        if (timerInterval) return; // Already running
+        if (timerWorker) return; // Already running
         
         // 移动设备调试
         if (typeof window !== 'undefined' && window.innerWidth <= 768) {
@@ -1046,42 +1048,48 @@
             Notification.requestPermission();
         }
 
-        timerInterval = setInterval(() => {
-            timeRemaining--;
-            updateDisplay();
-
-            if (timeRemaining < 0) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    if (isWorkTime) {
-                        isWorkTime = false;
-                        timeRemaining = breakDuration;
-                        statusEl.textContent = '休息时间到！';
-                        forceNotification('🔔 休息时间到！', `该休息 ${parseInt(breakDurationInput.value)} 分钟了，起身活动一下吧！
+        // 使用Web Worker处理后台计时
+        timerWorker = new Worker('timerWorker.js');
+        timerWorker.onmessage = function(e) {
+            if (e.data.type === 'tick') {
+                timeRemaining = e.data.remaining;
+                updateDisplay();
+            } else if (e.data.type === 'complete') {
+                timerWorker.terminate();
+                timerWorker = null;
+                if (isWorkTime) {
+                    isWorkTime = false;
+                    timeRemaining = breakDuration;
+                    statusEl.textContent = '休息时间到！';
+                    forceNotification('🔔 休息时间到！', `该休息 ${parseInt(breakDurationInput.value)} 分钟了，起身活动一下吧！
 
 💡 建议：
 • 起身走动，活动筋骨
 • 远眺窗外，缓解眼疲劳  
 • 补充水分，促进代谢`);
-                    } else {
-                        isWorkTime = true;
-                        timeRemaining = workDuration;
-                        statusEl.textContent = '工作时间开始！';
-                        forceNotification('⏰ 工作时间开始！', `休息结束，开始 ${parseInt(workDurationInput.value)} 分钟的专注工作吧！
+                } else {
+                    isWorkTime = true;
+                    timeRemaining = workDuration;
+                    statusEl.textContent = '工作时间开始！';
+                    forceNotification('⏰ 工作时间开始！', `休息结束，开始 ${parseInt(workDurationInput.value)} 分钟的专注工作吧！
 
 💡 建议：
 • 保持正确坐姿
 • 专注当前任务
 • 避免分心`);
-                    }
-                    startTimer(); // Automatically start the next phase
                 }
-        }, 1000);
+                startTimer(); // Automatically start the next phase
+            }
+        };
+        timerWorker.postMessage({command: 'start', duration: timeRemaining});
     }
 
     function stopTimer() {
-        clearInterval(timerInterval);
-        timerInterval = null;
+        if (timerWorker) {
+            timerWorker.postMessage({command: 'stop'});
+            timerWorker.terminate();
+            timerWorker = null;
+        }
         isWorkTime = true;
         timeRemaining = parseInt(workDurationInput.value) * 60;
         statusEl.textContent = '准备开始工作？';
